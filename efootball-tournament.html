@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eFootball Championship — League Table &amp; Fixtures</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  /* ============================================================
+     DESIGN TOKENS
+     ============================================================ */
+  :root{
+    --bg:#0D1117;
+    --bg-alt:#0A0D12;
+    --panel:#151B24;
+    --panel-alt:#1C2430;
+    --line:#2A3341;
+    --line-soft:#1E2632;
+    --gold:#F5B301;
+    --gold-dim:#8A6A1E;
+    --green:#22C55E;
+    --red:#EF4444;
+    --text:#E7ECF2;
+    --text-dim:#8B98A9;
+    --text-faint:#59677A;
+
+    --font-display:'Oswald', sans-serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+
+  body{
+    background:
+      radial-gradient(1100px 600px at 15% -10%, rgba(245,179,1,0.07), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(34,197,94,0.06), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:80px;
+  }
+
+  a{color:inherit;}
+
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px;}
+
+  /* ============================================================
+     HEADER — diagonal broadcast banner
+     ============================================================ */
+  header.masthead{
+    position:relative;
+    background:linear-gradient(120deg, var(--bg-alt) 0%, var(--panel) 55%, var(--bg-alt) 100%);
+    border-bottom:1px solid var(--line);
+    padding:34px 0 26px;
+    overflow:hidden;
+  }
+  header.masthead::before{
+    content:"";
+    position:absolute;
+    top:0; right:-10%;
+    width:55%; height:100%;
+    background:linear-gradient(100deg, transparent 0%, rgba(245,179,1,0.10) 45%, transparent 70%);
+    clip-path:polygon(30% 0, 100% 0, 70% 100%, 0% 100%);
+    pointer-events:none;
+  }
+  .masthead-inner{position:relative; display:flex; align-items:flex-end; justify-content:space-between; gap:24px; flex-wrap:wrap;}
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--gold);
+    display:flex; align-items:center; gap:8px;
+    margin-bottom:10px;
+  }
+  .eyebrow .dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--green);
+    box-shadow:0 0 0 3px rgba(34,197,94,0.18);
+    animation:pulse 1.8s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{opacity:1; transform:scale(1);}
+    50%{opacity:.55; transform:scale(.82);}
+  }
+  h1.title{
+    font-family:var(--font-display);
+    font-weight:700;
+    text-transform:uppercase;
+    font-size:clamp(30px, 5.2vw, 52px);
+    letter-spacing:.01em;
+    line-height:1;
+  }
+  h1.title span{color:var(--gold);}
+  .season-meta{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--text-dim);
+    text-align:right;
+    line-height:1.6;
+  }
+  .season-meta b{color:var(--text);}
+
+  /* ============================================================
+     TICKER — live/next match strip
+     ============================================================ */
+  .ticker-outer{
+    background:var(--bg-alt);
+    border-bottom:1px solid var(--line);
+    overflow:hidden;
+    white-space:nowrap;
+    position:relative;
+  }
+  .ticker-outer::after{
+    content:"";
+    position:absolute; inset:0;
+    background:linear-gradient(90deg, var(--bg-alt) 0%, transparent 6%, transparent 94%, var(--bg-alt) 100%);
+    pointer-events:none;
+  }
+  .ticker-track{
+    display:inline-flex;
+    gap:0;
+    animation:scroll-left 32s linear infinite;
+  }
+  .ticker-outer:hover .ticker-track{animation-play-state:paused;}
+  @keyframes scroll-left{
+    from{transform:translateX(0);}
+    to{transform:translateX(-50%);}
+  }
+  .tick{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 22px;
+    border-right:1px solid var(--line-soft);
+    font-family:var(--font-mono);
+    font-size:12.5px;
+    color:var(--text-dim);
+  }
+  .tick b{color:var(--text); font-weight:600;}
+  .tick .sep{color:var(--text-faint);}
+  .tick .tag{
+    font-size:9.5px;
+    letter-spacing:.12em;
+    padding:2px 6px;
+    border-radius:3px;
+    text-transform:uppercase;
+  }
+  .tag-played{background:rgba(34,197,94,0.12); color:var(--green);}
+  .tag-next{background:rgba(245,179,1,0.14); color:var(--gold);}
+
+  /* ============================================================
+     SECTIONS
+     ============================================================ */
+  section{padding:44px 0;}
+  section + section{border-top:1px solid var(--line-soft);}
+
+  .section-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+  }
+  .section-head h2{
+    font-family:var(--font-display);
+    text-transform:uppercase;
+    font-size:22px;
+    letter-spacing:.03em;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .section-head h2::before{
+    content:"";
+    width:4px; height:20px;
+    background:var(--gold);
+  }
+  .section-note{font-family:var(--font-mono); font-size:11.5px; color:var(--text-faint);}
+
+  /* ============================================================
+     POINTS TABLE
+     ============================================================ */
+  .table-shell{
+    background:var(--panel);
+    border:1px solid var(--line);
+    clip-path:polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%);
+  }
+  table.standings{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13.5px;
+  }
+  table.standings thead th{
+    font-family:var(--font-mono);
+    font-size:10.5px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--text-faint);
+    text-align:center;
+    padding:12px 8px;
+    border-bottom:1px solid var(--line);
+    font-weight:500;
+  }
+  table.standings thead th:first-child,
+  table.standings thead th.name-col{text-align:left;}
+  table.standings tbody td{
+    text-align:center;
+    padding:11px 8px;
+    border-bottom:1px solid var(--line-soft);
+    font-family:var(--font-mono);
+    color:var(--text-dim);
+  }
+  table.standings tbody tr:last-child td{border-bottom:none;}
+  table.standings tbody tr{transition:background .15s ease;}
+  table.standings tbody tr:hover{background:var(--panel-alt);}
+
+  td.rank-cell{
+    font-family:var(--font-display);
+    font-size:15px;
+    color:var(--text-dim);
+    width:38px;
+  }
+  tr.leader td.rank-cell{color:var(--gold);}
+  tr.leader{background:linear-gradient(90deg, rgba(245,179,1,0.07), transparent 60%);}
+
+  td.name-cell{
+    text-align:left;
+    font-family:var(--font-body);
+    font-weight:600;
+    color:var(--text);
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .avatar{
+    width:26px; height:26px;
+    border-radius:4px;
+    background:var(--panel-alt);
+    border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-display);
+    font-size:11px;
+    color:var(--gold);
+    flex-shrink:0;
+  }
+
+  td.pts-cell{
+    font-family:var(--font-display);
+    font-size:16px;
+    font-weight:600;
+    color:var(--text);
+    background:rgba(245,179,1,0.05);
+  }
+  .form-dots{display:inline-flex; gap:3px;}
+  .fd{width:7px;height:7px;border-radius:50%;}
+  .fd.w{background:var(--green);}
+  .fd.d{background:var(--text-faint);}
+  .fd.l{background:var(--red);}
+
+  .table-scroll{overflow-x:auto;}
+
+  /* ============================================================
+     FIXTURES
+     ============================================================ */
+  .matchday-tabs{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-bottom:18px;
+  }
+  .md-btn{
+    font-family:var(--font-mono);
+    font-size:12px;
+    letter-spacing:.04em;
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--text-dim);
+    padding:8px 14px;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .md-btn:hover{border-color:var(--gold-dim); color:var(--text);}
+  .md-btn.active{
+    background:var(--gold);
+    border-color:var(--gold);
+    color:#161006;
+    font-weight:700;
+  }
+
+  .fixture-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  @media (max-width:640px){
+    .fixture-grid{grid-template-columns:1fr;}
+  }
+
+  .fixture-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    padding:14px 16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .fixture-players{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-family:var(--font-body);
+    font-weight:600;
+    font-size:14px;
+  }
+  .fixture-players .vs{
+    font-family:var(--font-mono);
+    font-size:10px;
+    color:var(--text-faint);
+  }
+  .fixture-score{
+    font-family:var(--font-display);
+    font-size:20px;
+    font-weight:600;
+    letter-spacing:.03em;
+    color:var(--text);
+    background:var(--panel-alt);
+    border:1px solid var(--line);
+    padding:4px 12px;
+    min-width:64px;
+    text-align:center;
+  }
+  .fixture-score.pending{
+    color:var(--text-faint);
+    font-size:13px;
+    font-family:var(--font-mono);
+  }
+  .winner{color:var(--gold);}
+
+  /* ============================================================
+     FOOTER
+     ============================================================ */
+  footer{
+    padding:30px 0 10px;
+    text-align:center;
+    font-family:var(--font-mono);
+    font-size:11px;
+    color:var(--text-faint);
+    letter-spacing:.05em;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .ticker-track{animation:none;}
+    .eyebrow .dot{animation:none;}
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap masthead-inner">
+    <div>
+      <div class="eyebrow"><span class="dot"></span>League Stage — Round Robin</div>
+      <h1 class="title">eFOOTBALL <span>CHAMPIONSHIP</span></h1>
+    </div>
+    <div class="season-meta">
+      <div>8 Players &middot; <b>7</b> Matchdays &middot; <b>28</b> Fixtures</div>
+      <div id="metaSummary">Loading standings…</div>
+    </div>
+  </div>
+</header>
+
+<div class="ticker-outer">
+  <div class="ticker-track" id="tickerTrack"></div>
+</div>
+
+<main class="wrap">
+
+  <section id="standings-section">
+    <div class="section-head">
+      <h2>Points Table</h2>
+      <div class="section-note">Sorted by PTS &middot; GD &middot; GF</div>
+    </div>
+    <div class="table-shell table-scroll">
+      <table class="standings">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th class="name-col">Player</th>
+            <th>P</th>
+            <th>W</th>
+            <th>D</th>
+            <th>L</th>
+            <th>GF</th>
+            <th>GA</th>
+            <th>GD</th>
+            <th>PTS</th>
+            <th>Form</th>
+          </tr>
+        </thead>
+        <tbody id="standingsBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="fixtures-section">
+    <div class="section-head">
+      <h2>Fixtures</h2>
+      <div class="section-note" id="fixturesNote">Matchday 1 of 7</div>
+    </div>
+    <div class="matchday-tabs" id="matchdayTabs"></div>
+    <div class="fixture-grid" id="fixtureGrid"></div>
+  </section>
+
+</main>
+
+<footer>
+  Last updated manually &middot; eFootball Championship &middot; League Stage
+</footer>
+
+<script>
+/* ================================================================
+   EDIT YOUR TOURNAMENT DATA HERE
+   ================================================================
+   1. Rename the 8 players below.
+   2. Fill in scores for each match as they're played:
+      set homeScore / awayScore to a NUMBER (e.g. 3, 0).
+      Leave them as null for matches not yet played —
+      they'll show as upcoming fixtures automatically.
+   The points table recalculates itself from the scores below.
+   ================================================================ */
+
+const players = [
+  "LIJU",
+  "AKSHAY",
+  "AASHI",
+  "ALWIN",
+  "ANOOP",
+  "ADITHYAN",
+  "JINISH",
+  "ARJUN"
+];
+
+// Round-robin schedule (7 matchdays, each player plays every other once).
+// Indices refer to the players array above (0 = Player 1, etc.)
+const matches = [
+  // Matchday 1
+  { matchday: 1, home: 0, away: 1, homeScore: 3, awayScore: 2 },
+  { matchday: 1, home: 2, away: 3, homeScore: null, awayScore: null },
+  { matchday: 1, home: 4, away: 5, homeScore: null, awayScore: null },
+  { matchday: 1, home: 6, away: 7, homeScore: null, awayScore: null },
+
+  // Matchday 2
+  { matchday: 2, home: 0, away: 2, homeScore: null, awayScore: null },
+  { matchday: 2, home: 1, away: 4, homeScore: null, awayScore: null },
+  { matchday: 2, home: 3, away: 6, homeScore: null, awayScore: null },
+  { matchday: 2, home: 5, away: 7, homeScore: null, awayScore: null },
+
+  // Matchday 3
+  { matchday: 3, home: 0, away: 3, homeScore: null, awayScore: null },
+  { matchday: 3, home: 2, away: 5, homeScore: null, awayScore: null },
+  { matchday: 3, home: 1, away: 6, homeScore: null, awayScore: null },
+  { matchday: 3, home: 4, away: 7, homeScore: null, awayScore: null },
+
+  // Matchday 4
+  { matchday: 4, home: 0, away: 4, homeScore: null, awayScore: null },
+  { matchday: 4, home: 3, away: 5, homeScore: null, awayScore: null },
+  { matchday: 4, home: 2, away: 6, homeScore: null, awayScore: null },
+  { matchday: 4, home: 1, away: 7, homeScore: null, awayScore: null },
+
+  // Matchday 5
+  { matchday: 5, home: 0, away: 5, homeScore: null, awayScore: null },
+  { matchday: 5, home: 4, away: 6, homeScore: null, awayScore: null },
+  { matchday: 5, home: 3, away: 7, homeScore: null, awayScore: null },
+  { matchday: 5, home: 1, away: 2, homeScore: null, awayScore: null },
+
+  // Matchday 6
+  { matchday: 6, home: 0, away: 6, homeScore: null, awayScore: null },
+  { matchday: 6, home: 5, away: 1, homeScore: null, awayScore: null },
+  { matchday: 6, home: 4, away: 2, homeScore: null, awayScore: null },
+  { matchday: 6, home: 7, away: 3, homeScore: null, awayScore: null },
+
+  // Matchday 7
+  { matchday: 7, home: 0, away: 7, homeScore: null, awayScore: null },
+  { matchday: 7, home: 6, away: 5, homeScore: null, awayScore: null },
+  { matchday: 7, home: 2, away: 1, homeScore: null, awayScore: null },
+  { matchday: 7, home: 3, away: 4, homeScore: null, awayScore: null }
+];
+
+/* ================================================================
+   EXAMPLE — how to fill in a played result:
+   { matchday: 1, home: 0, away: 1, homeScore: 3, awayScore: 1 },
+   ================================================================
+   Everything below this line is display logic. No need to edit it. */
+
+function initials(name){
+  return name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0,2);
+}
+
+function computeStandings(){
+  const table = players.map((name, i) => ({
+    id: i, name,
+    played:0, won:0, drawn:0, lost:0,
+    gf:0, ga:0, pts:0,
+    form: []
+  }));
+
+  matches.forEach(m => {
+    if (m.homeScore === null || m.awayScore === null) return;
+    const h = table[m.home], a = table[m.away];
+    h.played++; a.played++;
+    h.gf += m.homeScore; h.ga += m.awayScore;
+    a.gf += m.awayScore; a.ga += m.homeScore;
+
+    if (m.homeScore > m.awayScore){
+      h.won++; a.lost++; h.pts += 3;
+      h.form.push('w'); a.form.push('l');
+    } else if (m.homeScore < m.awayScore){
+      a.won++; h.lost++; a.pts += 3;
+      a.form.push('w'); h.form.push('l');
+    } else {
+      h.drawn++; a.drawn++; h.pts += 1; a.pts += 1;
+      h.form.push('d'); a.form.push('d');
+    }
+  });
+
+  table.forEach(t => t.gd = t.gf - t.ga);
+
+  table.sort((x,y) =>
+    y.pts - x.pts ||
+    y.gd - x.gd ||
+    y.gf - x.gf ||
+    x.name.localeCompare(y.name)
+  );
+
+  return table;
+}
+
+function renderStandings(){
+  const table = computeStandings();
+  const body = document.getElementById('standingsBody');
+  body.innerHTML = '';
+
+  table.forEach((row, idx) => {
+    const tr = document.createElement('tr');
+    if (idx === 0 && row.played > 0) tr.classList.add('leader');
+
+    const formHtml = row.form.slice(-5).map(f =>
+      `<span class="fd ${f}"></span>`
+    ).join('');
+
+    tr.innerHTML = `
+      <td class="rank-cell">${idx+1}</td>
+      <td class="name-cell"><span class="avatar">${initials(row.name)}</span>${row.name}</td>
+      <td>${row.played}</td>
+      <td>${row.won}</td>
+      <td>${row.drawn}</td>
+      <td>${row.lost}</td>
+      <td>${row.gf}</td>
+      <td>${row.ga}</td>
+      <td>${row.gd > 0 ? '+' + row.gd : row.gd}</td>
+      <td class="pts-cell">${row.pts}</td>
+      <td><span class="form-dots">${formHtml || '<span style="color:var(--text-faint);font-family:var(--font-mono);font-size:11px;">—</span>'}</span></td>
+    `;
+    body.appendChild(tr);
+  });
+
+  const played = matches.filter(m => m.homeScore !== null).length;
+  document.getElementById('metaSummary').textContent =
+    `${played} / ${matches.length} matches played`;
+}
+
+function renderTicker(){
+  const track = document.getElementById('tickerTrack');
+  const items = matches.map(m => {
+    const played = m.homeScore !== null && m.awayScore !== null;
+    const home = players[m.home], away = players[m.away];
+    if (played){
+      return `<span class="tick"><span class="tag tag-played">MD${m.matchday}</span> <b>${home}</b> ${m.homeScore} <span class="sep">–</span> ${m.awayScore} <b>${away}</b></span>`;
+    }
+    return `<span class="tick"><span class="tag tag-next">MD${m.matchday}</span> ${home} <span class="sep">vs</span> ${away}</span>`;
+  });
+  // duplicate for seamless loop
+  track.innerHTML = items.join('') + items.join('');
+}
+
+let activeMatchday = 1;
+
+function renderMatchdayTabs(){
+  const tabs = document.getElementById('matchdayTabs');
+  tabs.innerHTML = '';
+  const total = Math.max(...matches.map(m => m.matchday));
+  for (let i = 1; i <= total; i++){
+    const btn = document.createElement('button');
+    btn.className = 'md-btn' + (i === activeMatchday ? ' active' : '');
+    btn.textContent = 'MD ' + i;
+    btn.onclick = () => { activeMatchday = i; renderMatchdayTabs(); renderFixtures(); };
+    tabs.appendChild(btn);
+  }
+}
+
+function renderFixtures(){
+  const grid = document.getElementById('fixtureGrid');
+  grid.innerHTML = '';
+  const total = Math.max(...matches.map(m => m.matchday));
+  document.getElementById('fixturesNote').textContent = `Matchday ${activeMatchday} of ${total}`;
+
+  matches.filter(m => m.matchday === activeMatchday).forEach(m => {
+    const played = m.homeScore !== null && m.awayScore !== null;
+    const home = players[m.home], away = players[m.away];
+    const homeWin = played && m.homeScore > m.awayScore;
+    const awayWin = played && m.awayScore > m.homeScore;
+
+    const card = document.createElement('div');
+    card.className = 'fixture-card';
+    card.innerHTML = `
+      <div class="fixture-players">
+        <span class="${homeWin ? 'winner' : ''}">${home}</span>
+        <span class="vs">vs</span>
+        <span class="${awayWin ? 'winner' : ''}">${away}</span>
+      </div>
+      <div class="fixture-score ${played ? '' : 'pending'}">
+        ${played ? `${m.homeScore} – ${m.awayScore}` : 'Not played'}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function init(){
+  renderStandings();
+  renderTicker();
+  renderMatchdayTabs();
+  renderFixtures();
+}
+
+init();
+</script>
+
+</body>
+</html>
