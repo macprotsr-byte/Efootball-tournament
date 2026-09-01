@@ -1,1 +1,25 @@
+name: Telegram Update
 
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  telegram:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send update to Telegram
+        run: |
+          MESSAGE="🚨 EFOOTBALL TOURNAMENT UPDATE
+
+          The tournament website has been updated.
+
+          🌐 Website: https://mfpesstournament.in
+
+          📢 Follow: @mfpesstournament"
+
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="@mfpesstournament" \
+            --data-urlencode text="$MESSAGE"
